@@ -1,0 +1,119 @@
+---
+title: "Differential gene expression analysis in cluster `r params$selected.cluster` "
+author:
+  - "trnguyen@ukaachen.de"
+date: "Last update on `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    keep_md: no
+    df_print: paged
+    toc: true
+    toc_float:
+      toc_collapsed: false
+    toc_depth: 3
+    number_sections: true
+    theme: lumen
+params:
+  selected.cluster: NA
+---
+  
+  
+  ```{css zoom-lib-src, echo = FALSE}
+script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"
+```
+
+```{js zoom-jquery, echo = FALSE}
+$(document).ready(function() {
+  $('body').prepend('<div class=\"zoomDiv\"><img src=\"\" class=\"zoomImg\"></div>');
+  // onClick function for all plots (img's)
+    $('img:not(.zoomImg)').click(function() {
+      $('.zoomImg').attr('src', $(this).attr('src')).css({width: '100%'});
+      $('.zoomDiv').css({opacity: '1', width: 'auto', border: '1px solid white', borderRadius: '5px', position: 'fixed', top: '50%', left: '50%', marginRight: '-50%', transform: 'translate(-50%, -50%)', boxShadow: '0px 0px 50px #888888', zIndex: '50', overflow: 'auto', maxHeight: '100%'});
+    });
+    // onClick function for zoomImg
+    $('img.zoomImg').click(function() {
+      $('.zoomDiv').css({opacity: '0', width: '0%'}); 
+    });
+  });
+```
+
+<style type="text/css">
+    div.datatables { height: auto !important;}
+</style>
+
+**Note on the .html report: Click on the image to zoom-in and one more click to go back to the original**
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='hide', fig.height=10, fig.width=18}
+##### clean up #####
+gc()
+rm(list = ls())
+library(Seurat)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+maindir <- "/media/hieunguyen/HNHD01/data/UKK/Lung/raw_downloaded_data"
+PROJECT <- "NSCLC_integrated"
+path.to.input.s.obj <- file.path(maindir, PROJECT, "refquery_final.rds")
+path.to.meta.data <- file.path(maindir, PROJECT, "metadata.csv")
+
+meta.data <- read.csv(path.to.meta.data)
+s.obj <- readRDS(path.to.input.s.obj)
+```
+
+# UMAP
+
+## Original dataset with cell type annotation
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=10, fig.width=14}
+p.umap.level1 <- DimPlot(object = s.obj, reduction = "umap", label = TRUE, label.box = TRUE, repel = TRUE, group.by = "Cell_Cluster_level1")
+p.umap.level1
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=10, fig.width=14}
+p.umap.level2 <- DimPlot(object = s.obj, reduction = "umap", label = TRUE, label.box = TRUE, repel = TRUE, group.by = "Cell_Cluster_level2")
+
+ggsave(plot = p.umap.level2, filename = "integrated_Lung_datasets.svg", path = "/media/hieunguyen/HNHD01/data/UKK/Lung/raw_downloaded_data/NSCLC_integrated", device = "svg", dpi = 300, width = 14, height = 10)
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=10, fig.width=14}
+##### DATASET GSE131907 --> 11 control samples (distant tissue)
+##### alveolar Mac vs low-quality mac + lipid associated Mac.
+##### plot 90 genes distant tissue vs 
+
+gene.list <- "/media/hieunguyen/HNSD01/src/UKK_Lung_cancer_datasets/capsule_dataset/gene_list.xlsx"
+genelistdf <- readxl::read_excel(gene.list, col_names = FALSE)
+colnames(genelistdf) <- c("Gene")
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=10, fig.width=14}
+meta.data <- s.obj@meta.data %>% rownames_to_column("barcode") 
+subset.metadata <- subset(meta.data, meta.data$Study == "GSE131907") %>%
+  rowwise() %>%
+  mutate(Sample.name = paste(str_split(barcode, "_")[[1]][3:4], collapse = "_")) %>%
+    mutate(Sample.name2 = paste(str_split(barcode, "_")[[1]][[1]], collapse = "_"))
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=10, fig.width=14}
+# control.sample.umi.mat <- readRDS("/media/hieunguyen/HNSD_mini/data/UKK_Lung_integrated_datasets/integrated_dataset/GSE131907_Lung_Cancer_raw_UMI_matrix.rds")
+# normal.samples <- c("N18", "N30", "N31", "N20", "N08", "N06", "N34", "N09", "N19", "N01", "N28")
+# library(comprehenr)
+# all.colnames <- colnames(control.sample.umi.mat)
+# selected.cells <- to_vec( for(item in all.colnames) if (str_split(item, "_")[[1]][[3]] %in% normal.samples) item)
+# 
+# control.mat <- control.sample.umi.mat[, selected.cells]
+# 
+# saveRDS(control.mat, file.path("/media/hieunguyen/HNSD_mini/data/UKK_Lung_integrated_datasets/integrated_dataset/GSE131907_Lung_Cancer_raw_UMI_matrix.controlOnly.rds"))
+# 
+# check.celltypes <- c("Proliferating Mac", 
+#                      "Alveolar Mac", 
+#                      "cDC2/moDCs",
+#                      "Monocytes",
+#                      "Low quality Mac", 
+#                      "Neutrophils",
+#                      "Lipid-associated Mac")
+```
+
